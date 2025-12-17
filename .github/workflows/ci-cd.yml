@@ -54,23 +54,53 @@ jobs:
           fi
 
       # ============================================================
-      # ✅ Étape Run unit tests with coverage (corrigée)
+      # 🧪 Tests unitaires ML
       # ============================================================
-      - name: Run unit tests with coverage
+      - name: Run unit tests
+        env:
+          PYTHONPATH: .
+          ENV: test
+        run: |
+          pytest tests/unit/
+
+      # ============================================================
+      # 📐 Tests de schémas Pydantic
+      # ============================================================
+      - name: Run schema tests
+        env:
+          PYTHONPATH: .
+          ENV: test
+        run: |
+          pytest tests/schemas/
+
+      # ============================================================
+      # 🌐 Tests fonctionnels FastAPI
+      # ============================================================
+      - name: Run functional tests
+        env:
+          PYTHONPATH: .
+          DATABASE_URL: "sqlite+pysqlite:///:memory:"
+          ENV: test
+        run: |
+          pytest tests/functional/
+
+      # ============================================================
+      # 📊 Couverture de code (globale)
+      # ============================================================
+      - name: Run coverage report
         env:
           PYTHONPATH: .
           DATABASE_URL: "sqlite+pysqlite:///:memory:"
           ENV: test
         run: |
           pytest \
-            --maxfail=1 \
             --disable-warnings \
             -q \
             --cov=src \
             --cov-report=xml
 
       # ============================================================
-      # ✅ Étape Smoke test FastAPI (corrigée)
+      # 🚦 Smoke test FastAPI (sans logique ML)
       # ============================================================
       - name: Smoke test FastAPI (no ML logic)
         env:

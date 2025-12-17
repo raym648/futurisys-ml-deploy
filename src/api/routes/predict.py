@@ -1,64 +1,40 @@
 # futurisys-ml-deploy/src/api/routes/predict.py
 
-from fastapi import APIRouter, Query
+import uuid
 
-from src.api.schemas import PredictionRequest, PredictionResponse
-from src.data.api_db_integration import record_input, record_output
-from src.ml.predictor import predict
+from fastapi import APIRouter, HTTPException, Query
 
+from src.api.schemas import PredictionInput, PredictionResponse
+from src.ml.predictor import predict as ml_predict
+
+# Le prefix est géré dans main.py (app.include_router(..., prefix="/predict"))
 router = APIRouter()
 
-# Version globale (fallback)
-MODEL_VERSION = "e02-ml-v1"
 
-
-@router.post("/", response_model=PredictionResponse)
-def predict_endpoint(
-    payload: PredictionRequest,
-    model: str
-    | None = Query(
-        default=None,
-        # fmt: off
-        description=(
-            "Nom du modèle à utiliser "
-            "(dummy, logistic, random_forest, random_forest_e04)"
-        ),
-        # fmt: on
-    ),
+@router.post(
+    "",  # ⬅️ endpoint final : POST /predict
+    response_model=PredictionResponse,
+    tags=["Prediction"],
+)
+def predict(
+    payload: PredictionInput,
+    model: str = Query("default", description="Nom du modèle ML"),
 ):
     """
     Endpoint de prédiction ML.
-    - Par défaut : modèle de production
-    - Optionnel : ?model=random_forest
+
+    - Validation des entrées assurée par Pydantic (422)
+    - Erreurs métier ML traduites en erreurs HTTP (400)
     """
-
-    input_data = payload.data
-
-    # Séparation claire entre tracking et sélection du modèle
-    model_name = model
-    model_version = MODEL_VERSION
-
-    # 🔵 Enregistrement INPUT
-    trace = record_input(payload=input_data, model_version=model_version)
-
     try:
-        # 🔵 Prédiction
-        result = predict(payload=input_data, model_name=model_name)
+        result = ml_predict(payload.model_dump(), model_name=model)
 
     except ValueError as exc:
-        # Validation douce : modèle inconnu ou erreur métier
-        result = {
-            "prediction": -1,
-            "probability": 0.0,
-            "error": str(exc),
-        }
+        # Erreur métier (modèle inconnu, feature invalide, etc.)
+        raise HTTPException(status_code=400, detail=str(exc))
 
-    # 🔵 Enregistrement OUTPUT
-    record_output(
-        input_id=trace["input_id"],
-        request_id=trace["request_id"],
-        result=result,
-        model_version=model_version,
+    return PredictionResponse(
+        request_id=str(uuid.uuid4()),
+        prediction=result["prediction"],
+        probability=result["probability"],
     )
-
-    return {"request_id": str(trace["request_id"]), **result}
