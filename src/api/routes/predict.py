@@ -1,6 +1,5 @@
 # futurisys-ml-deploy/src/api/routes/predict.py
 
-
 from fastapi import APIRouter, Query
 
 from src.api.schemas import PredictionRequest, PredictionResponse
@@ -16,12 +15,13 @@ MODEL_VERSION = "e02-ml-v1"
 @router.post("/", response_model=PredictionResponse)
 def predict_endpoint(
     payload: PredictionRequest,
-    model: str | None = Query(
+    model: str
+    | None = Query(
         default=None,
         # fmt: off
         description=(
-            "Nom du modèle à utiliser"
-            "(dummy, logistic, random_forest)"
+            "Nom du modèle à utiliser "
+            "(dummy, logistic, random_forest, random_forest_e04)"
         ),
         # fmt: on
     ),
@@ -34,13 +34,24 @@ def predict_endpoint(
 
     input_data = payload.data
 
-    model_version = model or MODEL_VERSION
+    # Séparation claire entre tracking et sélection du modèle
+    model_name = model
+    model_version = MODEL_VERSION
 
     # 🔵 Enregistrement INPUT
     trace = record_input(payload=input_data, model_version=model_version)
 
-    # 🔵 Prédiction
-    result = predict(payload=input_data, model_name=model)
+    try:
+        # 🔵 Prédiction
+        result = predict(payload=input_data, model_name=model_name)
+
+    except ValueError as exc:
+        # Validation douce : modèle inconnu ou erreur métier
+        result = {
+            "prediction": -1,
+            "probability": 0.0,
+            "error": str(exc),
+        }
 
     # 🔵 Enregistrement OUTPUT
     record_output(

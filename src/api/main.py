@@ -1,6 +1,5 @@
 # futurisys-ml-deploy/src/api/main.py
 
-
 from fastapi import FastAPI
 
 from src.api.routes.dataset import router as dataset_router
@@ -19,31 +18,31 @@ app = FastAPI(
 # Routes datasets
 # ============================================================
 
-app.include_router(dataset_router, prefix="/dataset", tags=["dataset"])
+app.include_router(dataset_router, prefix="/dataset")
 
 # ============================================================
 # Routes ML prediction
 # ============================================================
 
-app.include_router(predict_router, prefix="/predict", tags=["prediction"])
+app.include_router(predict_router, prefix="/predict")
 
 # ============================================================
 # Routes metadata (artefacts)
 # ============================================================
 
-app.include_router(metadata_router, prefix="/metadata", tags=["metadata"])
+app.include_router(metadata_router, prefix="/metadata")
 
 # ============================================================
 # Routes models registry
 # ============================================================
 
-app.include_router(models_router, prefix="/models", tags=["models"])
+app.include_router(models_router, prefix="/models")
 
 # ============================================================
 # Routes metrics
 # ============================================================
 
-app.include_router(metrics_router, prefix="/metrics", tags=["metrics"])
+app.include_router(metrics_router, prefix="/metrics")
 
 # ============================================================
 # Root / health

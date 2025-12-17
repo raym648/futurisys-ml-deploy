@@ -11,7 +11,7 @@ from src.data.models_db import Dataset
 router = APIRouter(prefix="/dataset", tags=["Dataset"])
 
 
-@router.get("")
+@router.get("/")
 def list_datasets(
     source_file: Optional[str] = Query(
         None,
@@ -25,6 +25,8 @@ def list_datasets(
 
     if source_file:
         query = query.filter(Dataset.source_file == source_file)
+
+    query = query.order_by(Dataset.created_at.desc())
 
     results = query.offset(skip).limit(limit).all()
 
@@ -42,13 +44,13 @@ def list_datasets(
 
 @router.get("/{dataset_id}")
 def get_dataset(dataset_id: int, db: Session = Depends(get_db)):
-    # fmt: off
     dataset = (
+        # fmt: off
         db.query(Dataset)
         .filter(Dataset.dataset_id == dataset_id)
         .first()
+        # fmt: on
     )
-    # fmt: on
 
     if not dataset:
         raise HTTPException(

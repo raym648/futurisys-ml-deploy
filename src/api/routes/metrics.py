@@ -1,6 +1,5 @@
 # futurisys-ml-deploy/src/api/routes/metrics.py
 
-
 from pathlib import Path
 
 import pandas as pd
@@ -27,12 +26,33 @@ def get_metric_file(filename: str):
     """
     Retourne le contenu d'un fichier de métriques CSV.
     """
+    # Sécurisation minimale
+    if ".." in filename or "/" in filename:
+        raise HTTPException(status_code=400, detail="Invalid filename")
+
+    if not filename.endswith(".csv"):
+        raise HTTPException(
+            # fmt: off
+            status_code=400,
+            detail="Only CSV files are allowed"
+            # fmt: on
+        )
+
     file_path = METRICS_PATH / filename
 
     if not file_path.exists():
         raise HTTPException(status_code=404, detail="Metric file not found")
 
-    df = pd.read_csv(file_path)
+    try:
+        df = pd.read_csv(file_path)
+    except Exception:
+        raise HTTPException(
+            # fmt: off
+            status_code=500,
+            detail="Unable to read metric file"
+            # fmt: on
+        )
+
     return {
         "file": filename,
         "rows": len(df),

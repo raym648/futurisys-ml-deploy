@@ -2,15 +2,15 @@
 
 from fastapi import APIRouter
 
-from src.ml.model_registry import METADATA
+from src.ml.model_registry import get_metadata
 
 router = APIRouter(prefix="/metadata", tags=["metadata"])
 
 
 @router.get("/")
-def get_metadata():
+def metadata():
     """
     Retourne les métadonnées complètes des artefacts ML.
     Lecture seule.
     """
-    return METADATA
+    return get_metadata()

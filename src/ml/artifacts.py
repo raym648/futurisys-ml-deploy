@@ -8,19 +8,18 @@ Toute la logique de chargement est centralisée dans model_registry.py
 afin d'éviter toute duplication et garantir une source de vérité unique.
 """
 
-from src.ml.model_registry import (
-    DEFAULT_MODEL_NAME,
-    FEATURES,
-    MODELS,
-    get_model,
-)
+from src.ml.model_registry import DEFAULT_MODEL_NAME, get_features, get_model
 
 __all__ = [
     "DEFAULT_MODEL_NAME",
-    "FEATURES",
-    "MODELS",
+    "get_features",
+    "get_model",
     "default_model",
 ]
 
-# Modèle par défaut exposé explicitement
-default_model = get_model(DEFAULT_MODEL_NAME)
+
+def default_model():
+    """
+    Retourne le modèle ML par défaut (lazy loading).
+    """
+    return get_model(DEFAULT_MODEL_NAME)
