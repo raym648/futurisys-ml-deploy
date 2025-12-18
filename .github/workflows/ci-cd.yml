@@ -162,15 +162,23 @@ jobs:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
           SPACE_NAME: ${{ secrets.HF_SPACE_NAME }}
         run: |
+          set -e
+
           if [ -z "$HF_USERNAME" ] || [ -z "$HF_TOKEN" ] || [ -z "$SPACE_NAME" ]; then
             echo "HF secrets missing"
             exit 1
           fi
 
-          mkdir hf-space
-          cd hf-space
+          # Git identity
+          git config --global user.email "ci-bot@futurisys.example"
+          git config --global user.name "futurisys-ci-bot"
 
-          git clone https://${HF_TOKEN}@huggingface.co/spaces/${HF_USERNAME}/${SPACE_NAME} .
+          # 🔐 CI-safe Hugging Face auth
+          git config --global http.https://huggingface.co/.extraheader \
+            "Authorization: Bearer $HF_TOKEN"
+
+          git clone https://huggingface.co/spaces/${HF_USERNAME}/${SPACE_NAME} hf-space
+          cd hf-space
 
           echo "Sync API"
           rsync -av --delete ../src/ ./src/
@@ -181,7 +189,7 @@ jobs:
           git add -A
           if ! git diff --staged --quiet; then
             git commit -m "deploy: API + dashboard ($GITHUB_SHA)"
-            git push origin main
+            git push
           else
             echo "No changes to deploy"
           fi
