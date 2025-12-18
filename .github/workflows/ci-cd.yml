@@ -40,12 +40,10 @@ jobs:
           pip install -r requirements-dev.txt
         
       - name: Install API deps
-        working-directory: futurisys-ml-deploy/src/api
-        run: pip install -r requirements.txt
+        run: pip install -r futurisys-ml-deploy/src/api/requirements.txt
 
       - name: Install dashboard deps
-        working-directory: futurisys-ml-deploy/dashboard
-        run: pip install -r requirements.txt
+        run: pip install -r futurisys-ml-deploy/dashboard/requirements.txt
 
       - name: Check sklearn version
         run: |
@@ -73,7 +71,6 @@ jobs:
       # 🧪 Tests unitaires ML
       # ============================================================
       - name: Run unit tests
-        working-directory: futurisys-ml-deploy/
         env:
           PYTHONPATH: .
           ENV: test
@@ -84,7 +81,6 @@ jobs:
       # 📐 Tests de schémas Pydantic
       # ============================================================
       - name: Run schema tests
-        working-directory: futurisys-ml-deploy/
         env:
           PYTHONPATH: .
           ENV: test
@@ -95,7 +91,6 @@ jobs:
       # 🌐 Tests fonctionnels FastAPI
       # ============================================================
       - name: Run functional tests
-        working-directory: futurisys-ml-deploy/
         env:
           PYTHONPATH: .
           DATABASE_URL: "sqlite+pysqlite:///:memory:"
