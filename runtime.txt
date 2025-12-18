@@ -1,0 +1,3 @@
+# `futurisys-ml-deploy/runtime.txt`
+
+python-3.12

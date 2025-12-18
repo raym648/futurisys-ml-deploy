@@ -37,8 +37,22 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
+          pip install -r requirements-dev.txt
+        
+      - name: Install API deps
+        run: pip install -r api/requirements.txt
 
+      - name: Install dashboard deps
+        run: pip install -r dashboard/requirements.txt
+
+      - name: Check sklearn version
+        run: |
+          python - << 'EOF'
+          import sklearn
+          assert sklearn.__version__ == "1.6.1"
+          print("scikit-learn version OK:", sklearn.__version__)
+          EOF
+        
       - name: Install pre-commit
         run: |
           pip install pre-commit

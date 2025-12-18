@@ -18,7 +18,7 @@ app = FastAPI(
 # Routes datasets
 # ============================================================
 
-app.include_router(dataset_router, prefix="/dataset")
+app.include_router(dataset_router)
 
 # ============================================================
 # Routes ML prediction
@@ -30,19 +30,19 @@ app.include_router(predict_router, prefix="/predict")
 # Routes metadata (artefacts)
 # ============================================================
 
-app.include_router(metadata_router, prefix="/metadata")
+app.include_router(metadata_router)
 
 # ============================================================
 # Routes models registry
 # ============================================================
 
-app.include_router(models_router, prefix="/models")
+app.include_router(models_router)
 
 # ============================================================
 # Routes metrics
 # ============================================================
 
-app.include_router(metrics_router, prefix="/metrics")
+app.include_router(metrics_router)
 
 # ============================================================
 # Root / health

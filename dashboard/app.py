@@ -9,9 +9,17 @@ import pandas as pd
 import requests
 import streamlit as st
 
-API_BASE_URL = st.secrets.get(
-    "API_BASE_URL", os.getenv("API_BASE_URL", "http://localhost:8000")
-)
+API_BASE_URL = st.secrets.get("API_BASE_URL") or os.getenv("API_BASE_URL")
+
+if not API_BASE_URL:
+    st.error(
+        # fmt: off
+        "API_BASE_URL is not configured."
+        "Please set it in Hugging Face Secrets."
+        # fmt: on
+    )
+    st.stop()
+
 
 st.set_page_config(page_title="Futurisys ML Dashboard", layout="wide")
 
@@ -35,12 +43,18 @@ page = st.sidebar.radio(
 # -----------------------------
 # Helpers
 # -----------------------------
+
+
 def api_get(path: str):
-    return requests.get(f"{API_BASE_URL}{path}").json()
+    r = requests.get(f"{API_BASE_URL}{path}", timeout=10)
+    r.raise_for_status()
+    return r.json()
 
 
 def api_post(path: str, payload: dict):
-    return requests.post(f"{API_BASE_URL}{path}", json=payload).json()
+    r = requests.post(f"{API_BASE_URL}{path}", json=payload, timeout=10)
+    r.raise_for_status()
+    return r.json()
 
 
 # -----------------------------
