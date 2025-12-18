@@ -155,7 +155,7 @@ jobs:
         run: |
           git config --global user.email "ci-bot@futurisys.example"
           git config --global user.name "futurisys-ci-bot"
-
+      
       - name: Deploy to Hugging Face Space
         env:
           HF_USERNAME: ${{ secrets.HF_USERNAME }}
@@ -169,13 +169,13 @@ jobs:
             exit 1
           fi
 
-          # Git identity
           git config --global user.email "ci-bot@futurisys.example"
           git config --global user.name "futurisys-ci-bot"
 
-          # 🔐 CI-safe Hugging Face auth
-          git config --global http.https://huggingface.co/.extraheader \
-            "Authorization: Bearer $HF_TOKEN"
+          # 🔐 Force non-interactive auth for Git
+          export GIT_ASKPASS=/bin/echo
+          export GIT_USERNAME="$HF_USERNAME"
+          export GIT_PASSWORD="$HF_TOKEN"
 
           git clone https://huggingface.co/spaces/${HF_USERNAME}/${SPACE_NAME} hf-space
           cd hf-space
@@ -189,7 +189,7 @@ jobs:
           git add -A
           if ! git diff --staged --quiet; then
             git commit -m "deploy: API + dashboard ($GITHUB_SHA)"
-            git push
+            git push https://${HF_USERNAME}:${HF_TOKEN}@huggingface.co/spaces/${HF_USERNAME}/${SPACE_NAME}
           else
             echo "No changes to deploy"
           fi
