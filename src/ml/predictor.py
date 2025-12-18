@@ -7,7 +7,13 @@ import numpy as np
 from src.ml.model_registry import get_features, get_model
 
 # Valeurs catégorielles autorisées (source de vérité = CSV)
-ALLOWED_FREQUENCE_DEPLACEMENT = {"aucun", "occasionnel", "frequent"}
+FREQUENCE_DEPLACEMENT_MAPPING = {
+    "aucun": 0,
+    "occasionnel": 1,
+    "frequent": 2,
+}
+
+ALLOWED_FREQUENCE_DEPLACEMENT = set(FREQUENCE_DEPLACEMENT_MAPPING.keys())
 
 
 def prepare_features(payload: dict) -> np.ndarray:
@@ -15,15 +21,24 @@ def prepare_features(payload: dict) -> np.ndarray:
     Reconstruit le vecteur numpy dans l'ordre exact utilisé au training.
 
     - Valide les catégories métier
-    - Lève une ValueError si une valeur est hors dataset
+    - Encode les variables catégorielles
+    - Retourne un array numpy 2D
     """
-    # Validation métier explicite
     freq = payload.get("frequence_deplacement")
+
     if freq not in ALLOWED_FREQUENCE_DEPLACEMENT:
         raise ValueError(f"Invalid frequence_deplacement value: {freq}")
 
+    encoded_freq = FREQUENCE_DEPLACEMENT_MAPPING[freq]
+
     features = get_features()
-    vector = [payload.get(feature, 0) for feature in features]
+
+    vector = []
+    for feature in features:
+        if feature == "frequence_deplacement":
+            vector.append(encoded_freq)
+        else:
+            vector.append(payload.get(feature, 0))
 
     return np.array(vector, dtype=float).reshape(1, -1)
 
