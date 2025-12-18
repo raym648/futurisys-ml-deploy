@@ -1,0 +1,37 @@
+# futurisys-ml-deploy/.pre-commit-config.yaml
+
+repos:
+- repo: local
+  hooks:
+    - id: black
+      name: black
+      entry: black
+      language: system
+      types: [python]
+
+- repo: local
+  hooks:
+    - id: isort
+      name: isort
+      entry: isort
+      args: ["--profile=black"]
+      language: system
+      types: [python]
+
+- repo: local
+  hooks:
+    - id: flake8
+      name: flake8
+      entry: flake8
+      language: system
+      types: [python]
+
+- repo: local
+  hooks:
+    - id: commitlint
+      name: commitlint
+      # Si tu veux que npx installe automatiquement si absent, retire `--no-install`.
+      # Recommandation : installe commitlint en devDependencies et garde --no-install pour rapidité.
+      entry: npx --no-install commitlint --edit "$1"
+      language: system
+      stages: [commit-msg]

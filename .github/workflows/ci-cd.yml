@@ -1,0 +1,187 @@
+# futurisys-ml-deploy/.github/workflows/ci-cd.yml
+
+name: CI / CD - Tests, Lint, Build & Deploy
+
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+    branches: [main, dev]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  id-token: write
+
+jobs:
+  checks:
+    name: Run checks (lint, tests, smoke)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.12"
+
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: ${{ runner.os }}-pip-
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+        
+      - name: Install API deps
+        run: pip install -r src/api/requirements.txt
+
+      - name: Install dashboard deps
+        run: pip install -r dashboard/requirements.txt
+
+      - name: Check sklearn version
+        run: |
+          python - << 'EOF'
+          import sklearn
+          assert sklearn.__version__ == "1.6.1"
+          print("scikit-learn version OK:", sklearn.__version__)
+          EOF
+        
+      - name: Install pre-commit
+        run: |
+          pip install pre-commit
+
+      - name: Run pre-commit hooks
+        run: |
+          pre-commit run --all-files || true
+
+      - name: Lint (flake8)
+        run: |
+          if [ -f setup.cfg ] || [ -f pyproject.toml ]; then
+            flake8 .
+          fi
+
+      # ============================================================
+      # 🧪 Tests unitaires ML
+      # ============================================================
+      - name: Run unit tests
+        env:
+          PYTHONPATH: .
+          ENV: test
+        run: |
+          pytest tests/unit/
+
+      # ============================================================
+      # 📐 Tests de schémas Pydantic
+      # ============================================================
+      - name: Run schema tests
+        env:
+          PYTHONPATH: .
+          ENV: test
+        run: |
+          pytest tests/schemas/
+
+      # ============================================================
+      # 🌐 Tests fonctionnels FastAPI
+      # ============================================================
+      - name: Run functional tests
+        env:
+          PYTHONPATH: .
+          DATABASE_URL: "sqlite+pysqlite:///:memory:"
+          ENV: test
+        run: |
+          pytest tests/functional/
+
+      # ============================================================
+      # 📊 Couverture de code (globale)
+      # ============================================================
+      - name: Run coverage report
+        env:
+          PYTHONPATH: .
+          DATABASE_URL: "sqlite+pysqlite:///:memory:"
+          ENV: test
+        run: |
+          pytest \
+            --disable-warnings \
+            -q \
+            --cov=src \
+            --cov-report=xml
+
+      # ============================================================
+      # 🚦 Smoke test FastAPI (sans logique ML)
+      # ============================================================
+      - name: Smoke test FastAPI (no ML logic)
+        env:
+          PYTHONPATH: .
+          ENV: test
+        run: |
+          python - << 'EOF'
+          from fastapi.testclient import TestClient
+          from src.api.main import app
+
+          client = TestClient(app)
+
+          for route in ["/", "/metadata", "/models"]:
+              r = client.get(route)
+              assert r.status_code == 200, route
+
+          print("Smoke tests OK")
+          EOF
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage.xml
+          if-no-files-found: ignore
+
+  deploy:
+    name: Deploy API + Dashboard to Hugging Face Spaces
+    runs-on: ubuntu-latest
+    needs: checks
+    if: github.ref == 'refs/heads/main' && needs.checks.result == 'success'
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up git
+        run: |
+          git config --global user.email "ci-bot@futurisys.example"
+          git config --global user.name "futurisys-ci-bot"
+
+      - name: Deploy to Hugging Face Space
+        env:
+          HF_USERNAME: ${{ secrets.HF_USERNAME }}
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          SPACE_NAME: ${{ secrets.HF_SPACE_NAME }}
+        run: |
+          if [ -z "$HF_USERNAME" ] || [ -z "$HF_TOKEN" ] || [ -z "$SPACE_NAME" ]; then
+            echo "HF secrets missing"
+            exit 1
+          fi
+
+          mkdir hf-space
+          cd hf-space
+
+          git clone https://${HF_TOKEN}@huggingface.co/spaces/${HF_USERNAME}/${SPACE_NAME} .
+
+          echo "Sync API"
+          rsync -av --delete ../src/ ./src/
+
+          echo "Sync dashboard"
+          rsync -av --delete ../dashboard/ ./dashboard/ || true
+
+          git add -A
+          if ! git diff --staged --quiet; then
+            git commit -m "deploy: API + dashboard ($GITHUB_SHA)"
+            git push origin main
+          else
+            echo "No changes to deploy"
+          fi

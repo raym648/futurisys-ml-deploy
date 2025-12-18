@@ -1,2 +1,107 @@
+# ======================
+# PYTHON
+# ======================
+__pycache__/
+*.py[cod]
+*.pyo
 
+# Packages & builds
+build/
+dist/
+*.egg-info/
 
+# Environnements virtuels
+.venv/
+venv/
+env/
+env.bak/
+*.env
+.env
+.env.*
+!.env.example  # si tu veux version "template"
+
+# Tools caches
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+.cache/
+
+# ======================
+# JUPYTER
+# ======================
+.ipynb_checkpoints/
+
+# ======================
+# DATA & MODELS
+# ======================
+data/raw/*.csv
+data/raw/tmp_*.csv
+
+data/processed/*.csv
+data/processed/*.joblib
+data/processed/*.pkl
+data/processed/*.npy
+data/processed/**/tmp_*.joblib
+data/processed/**/tmp_*.npy
+data/processed/**/tmp_*.csv
+data/processed/**/tmp_*.pkl
+
+# ========================
+# ML artifacts volumineux et Modèles temporaires
+# ========================
+data/ml_artifacts/*.npy
+data/ml_artifacts/*.joblib
+data/ml_artifacts/*.csv
+data/ml_artifacts/*.pkl
+data/ml_artifacts/**/tmp_*.joblib
+data/ml_artifacts/**/tmp_*.npy
+data/ml_artifacts/**/tmp_*.csv
+data/ml_artifacts/**/tmp_*.pkl
+
+data/ml_artifacts/features/*.joblib
+data/ml_artifacts/features/*.csv
+data/ml_artifacts/features/tmp_/*.joblib
+data/ml_artifacts/features/tmp_/*.csv
+
+data/ml_artifacts/metrics/*.joblib
+data/ml_artifacts/metrics/*.csv
+data/ml_artifacts/metrics/tmp_/*.joblib
+data/ml_artifacts/metrics/tmp_/*.csv
+
+data/ml_artifacts/models/*.joblib
+data/ml_artifacts/models/*.csv
+data/ml_artifacts/models/tmp_/*.joblib
+data/ml_artifacts/models/tmp_/*.csv
+
+data/ml_artifacts/pipelines/*.joblib
+data/ml_artifacts/pipelines/*.csv
+data/ml_artifacts/pipelines/tmp_/*.joblib
+data/ml_artifacts/pipelines/tmp_/*.csv
+
+data/ml_artifacts/training/*.joblib
+data/ml_artifacts/training/*.csv
+data/ml_artifacts/training/tmp_/*.joblib
+data/ml_artifacts/training/tmp_/*.csv
+
+# ======================
+# IDE / EDITORS
+# ======================
+.vscode/
+.idea/
+
+# ======================
+# DOCKER
+# ======================
+*.pid
+docker-volume/
+
+# ======================
+# GITHUB ACTIONS
+# ======================
+.github/workflows/__pycache__/
+
+# ======================
+# OS / SYSTEM FILES
+# ======================
+.DS_Store
+Thumbs.db
