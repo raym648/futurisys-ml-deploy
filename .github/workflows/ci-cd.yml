@@ -141,8 +141,9 @@ jobs:
           path: coverage.xml
           if-no-files-found: ignore
 
+
   deploy:
-    name: Deploy API + Dashboard to Hugging Face Spaces
+    name: Deploy API and Dashboard to Hugging Face Spaces
     runs-on: ubuntu-latest
     needs: checks
     if: github.ref == 'refs/heads/main' && needs.checks.result == 'success'
@@ -151,45 +152,75 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Set up git
+      - name: Configure git
         run: |
           git config --global user.email "ci-bot@futurisys.example"
           git config --global user.name "futurisys-ci-bot"
-      
-      - name: Deploy to Hugging Face Space
+
+      # ============================================================
+      # 🚀 Deploy FastAPI Space
+      # ============================================================
+      - name: Deploy FastAPI to HF Space (API)
         env:
           HF_USERNAME: ${{ secrets.HF_USERNAME }}
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
-          SPACE_NAME: ${{ secrets.HF_SPACE_NAME }}
+          SPACE_NAME: ${{ secrets.HF_SPACE_API }}
         run: |
           set -e
 
-          if [ -z "$HF_USERNAME" ] || [ -z "$HF_TOKEN" ] || [ -z "$SPACE_NAME" ]; then
-            echo "HF secrets missing"
-            exit 1
-          fi
+          echo "Deploying API to space: $SPACE_NAME"
 
-          git config --global user.email "ci-bot@futurisys.example"
-          git config --global user.name "futurisys-ci-bot"
+          git clone https://huggingface.co/spaces/${HF_USERNAME}/${SPACE_NAME} hf-api
+          cd hf-api
 
-          # 🔐 Force non-interactive auth for Git
-          export GIT_ASKPASS=/bin/echo
-          export GIT_USERNAME="$HF_USERNAME"
-          export GIT_PASSWORD="$HF_TOKEN"
-
-          git clone https://huggingface.co/spaces/${HF_USERNAME}/${SPACE_NAME} hf-space
-          cd hf-space
-
-          echo "Sync API"
+          echo "Sync API source code"
           rsync -av --delete ../src/ ./src/
 
-          echo "Sync dashboard"
-          rsync -av --delete ../dashboard/ ./dashboard/ || true
+          echo "Sync API requirements"
+          rsync -av ../requirements.txt ./
+
+          echo "Ensure Dockerfile exists for API"
+          test -f Dockerfile
+          cp ../dockerfiles/api.Dockerfile ./Dockerfile
 
           git add -A
           if ! git diff --staged --quiet; then
-            git commit -m "deploy: API + dashboard ($GITHUB_SHA)"
+            git commit -m "deploy(api): FastAPI (${GITHUB_SHA})"
             git push https://${HF_USERNAME}:${HF_TOKEN}@huggingface.co/spaces/${HF_USERNAME}/${SPACE_NAME}
           else
-            echo "No changes to deploy"
+            echo "No API changes to deploy"
+          fi
+
+      # ============================================================
+      # 🎨 Deploy Streamlit Dashboard Space
+      # ============================================================
+      - name: Deploy Dashboard to HF Space
+        env:
+          HF_USERNAME: ${{ secrets.HF_USERNAME }}
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          SPACE_NAME: ${{ secrets.HF_SPACE_DASHBOARD }}
+        run: |
+          set -e
+
+          echo "Deploying Dashboard to space: $SPACE_NAME"
+
+          git clone https://huggingface.co/spaces/${HF_USERNAME}/${SPACE_NAME} hf-dashboard
+          cd hf-dashboard
+
+          echo "Sync dashboard source code"
+          rsync -av --delete ../dashboard/ ./dashboard/
+
+          echo "Sync dashboard requirements"
+          rsync -av ../dashboard/requirements.txt ./requirements.txt
+
+          echo "Ensure Dockerfile exists for dashboard"
+          test -f Dockerfile
+          cp ../dockerfiles/dashboard.Dockerfile ./Dockerfile
+
+          git add -A
+          if ! git diff --staged --quiet; then
+            git commit -m "deploy(dashboard): Streamlit (${GITHUB_SHA})"
+            git push https://${HF_USERNAME}:${HF_TOKEN}@huggingface.co/spaces/${HF_USERNAME}/${SPACE_NAME}
+          else
+            echo "No dashboard changes to deploy"
           fi

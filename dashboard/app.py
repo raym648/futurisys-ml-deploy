@@ -9,7 +9,13 @@ import pandas as pd
 import requests
 import streamlit as st
 
-API_BASE_URL = st.secrets.get("API_BASE_URL") or os.getenv("API_BASE_URL")
+# API_BASE_URL = st.secrets.get("API_BASE_URL") or os.getenv("API_BASE_URL")
+API_BASE_URL = (
+    (st.secrets.get("API_BASE_URL") or os.getenv("API_BASE_URL", ""))
+    .strip()
+    .rstrip("/")
+)
+
 
 if not API_BASE_URL:
     st.error(
@@ -63,8 +69,8 @@ def api_post(path: str, payload: dict):
 if page == "🔎 Overview":
     st.header("🔎 API Overview")
 
-    metadata = api_get("/metadata")
-    models = api_get("/models")
+    metadata = api_get("/metadata/")
+    models = api_get("/models/")
 
     col1, col2 = st.columns(2)
 
@@ -82,7 +88,7 @@ if page == "🔎 Overview":
 elif page == "🧪 Metrics & Monitoring":
     st.header("🧪 Metrics & Monitoring")
 
-    metrics = api_get("/metrics")
+    metrics = api_get("/metrics/")
     df = pd.DataFrame(metrics)
 
     st.dataframe(df)
@@ -107,7 +113,7 @@ elif page == "🧪 Metrics & Monitoring":
 elif page == "🧠 Model Comparison":
     st.header("🧠 Model Comparison")
 
-    metrics = api_get("/metrics")
+    metrics = api_get("/metrics/")
     df = pd.DataFrame(metrics)
 
     selected_models = st.multiselect(
@@ -142,7 +148,7 @@ elif page == "🧠 Model Comparison":
 elif page == "🧾 Prediction History":
     st.header("🧾 Prediction History")
 
-    history = api_get("/dataset")
+    history = api_get("/dataset/")
     df = pd.DataFrame(history)
 
     st.dataframe(df)
@@ -153,7 +159,7 @@ elif page == "🧾 Prediction History":
 elif page == "🤖 Predict":
     st.header("🤖 Make a prediction")
 
-    models = api_get("/models")
+    models = api_get("/models/")
     model_name = st.selectbox(
         "Model",
         models.get("available", []),
@@ -175,7 +181,7 @@ elif page == "🤖 Predict":
             "model": model_name,
         }
 
-        result = api_post("/predict", payload)
+        result = api_post("/predict/", payload)
 
         st.success("Prediction completed")
         st.json(result)

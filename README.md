@@ -1,10 +1,10 @@
-# Futurisys – Déploiement d’un Modèle de Machine Learning (futurisys-ml-deploy)
+# futurisys-ml-deploy
 
 **Projet-5 - Déployez un modèle de Machine Learning**
 
-**✍️ Auteur :** *[Raymond Francius]* 
-**📚 Rôle :** *[Apprenant - Promotion Sept-2025]* — **Engineer AI** — **Openclassrooms**  
-🗓️ **Date de mise à jour :** *[18-12-2025]*
+* **✍️ Auteur :** *[Raymond Francius]* 
+* **📚 Rôle :** *[Apprenant - Promotion Sept-2025]* — **Engineer AI** — **Openclassrooms**  
+* 🗓️ **Date de mise à jour :** *[18-12-2025]*
 
 
 ## 📌 Présentation du projet
@@ -115,80 +115,81 @@ La documentation détaillée est disponible dans le dossier `docs/`.
 
 ---
 ## Installation (local)
-git clone git@github.com:TON_COMPTE/futurisys-ml-deploy.git
-cd futurisys-ml-deploy
+* git clone git@github.com:TON_COMPTE/futurisys-ml-deploy.git
+* cd futurisys-ml-deploy
 
 **Python (venv)**
-python -m venv .venv
-source .venv/bin/activate
+* python -m venv .venv
+* source .venv/bin/activate
 
 **installer runtime + dev tools**
-pip install -r api/requirements.txt
-pip install -r dashboard/requirements.txt
-pip install -r requirements-dev.txt
+* pip install -r api/requirements.txt
+* pip install -r dashboard/requirements.txt
+* pip install -r requirements-dev.txt
 
 ---
 **Installer commitlint dans le projet (recommandé) si le repo n'a pas package.json**
-npm init -y
-npm install --save-dev @commitlint/cli @commitlint/config-conventional
-***config minimale***
-echo "module.exports = { extends: ['@commitlint/config-conventional'] };" > commitlint.config.js
+* npm init -y
+* npm install --save-dev @commitlint/cli @commitlint/config-conventional 
+  
+***config minimale*** 
+* echo "module.exports = { extends: ['@commitlint/config-conventional'] };" > commitlint.config.js
 
-***si tu utilises pip / venv / conda***
-pip install "black==23.1.0" "isort==5.12.0" "flake8==6.0.0"
+***si tu utilises pip / venv / conda*** 
+* pip install "black==23.1.0" "isort==5.12.0" "flake8==6.0.0"
 
-## ***Nettoyer cache pre-commit et réinstaller hooks***
-rm -rf ~/.cache/pre-commit
-pre-commit clean
-pre-commit install
+## ***Nettoyer cache pre-commit et réinstaller hooks*** 
+* rm -rf ~/.cache/pre-commit
+* pre-commit clean
+* pre-commit install
 
-## ***Tester les hooks (fichiers)***
-pre-commit run --all-files -v
+## ***Tester les hooks (fichiers)*** 
+* pre-commit run --all-files -v
 
 
 ## **Tester le hook commit-msg (2 façons)**
 **Méthode A — faire un vrai commit (recommandée)**
-git commit --allow-empty -m "feat: test commit-msg (should pass)"
-***puis pour un message invalide***
-git commit --allow-empty -m "invalid message"
+* git commit --allow-empty -m "feat: test commit-msg (should pass)" 
 
-**Méthode B — test manuel avec un fichier message**
-echo "invalid message" > .git/COMMIT_EDITMSG
-pre-commit run --hook-stage commit-msg -v --commit-msg-filename .git/COMMIT_EDITMSG
+***puis pour un message invalide*** 
+* git commit --allow-empty -m "invalid message"
 
----
-
-## 🛠️ Installation (local)
-
-pip install -r requirements.txt
-export DATABASE_URL="postgresql+psycopg://..."
-uvicorn src.api.main:app --reload
+**Méthode B — test manuel avec un fichier message** 
+* echo "invalid message" > .git/COMMIT_EDITMSG
+* pre-commit run --hook-stage commit-msg -v --commit-msg-filename .git/COMMIT_EDITMSG
 
 ---
-## Tests
-* Tests unitaires avec `pytest`
-* Tests rapides dans CI (pas d'entraînement)
+
+## **🛠️ Installation (local)** 
+* pip install -r requirements.txt 
+* export DATABASE_URL="postgresql+psycopg://..." 
+* uvicorn src.api.main:app --reload 
+
+---
+## **Tests** 
+* Tests unitaires avec `pytest` 
+* Tests rapides dans CI (pas d'entraînement) 
 * Pour tests d'intégration lourds, utiliser une pipeline séparée / runners self-hosted
 
-***Commande pour exécuter les tests :***
-* Tests unitaires ML
-pytest tests/unit/test_predictor.py
+***Commande pour exécuter les tests :*** 
+1. Tests unitaires ML 
+* pytest tests/unit/test_predictor.py
 
-* Tests de schémas
-pytest tests/schemas/test_schemas_input.py
+2. Tests de schémas 
+* pytest tests/schemas/test_schemas_input.py
 
-* Tests fonctionnels API
-pytest tests/functional/test_functional_model.py
+3. Tests fonctionnels API 
+* pytest tests/functional/test_functional_model.py
 
-***Commande pour générer un rapport de couverture :***
-pytest --cov=src --cov-report=xml
+***Commande pour générer un rapport de couverture :*** 
+* pytest --cov=src --cov-report=xml
 
-***Test avec couverture de code***
-pytest --cov=src --cov-report=term-missing
-pytest --cov=src --cov-report=html
+***Test avec couverture de code*** 
+* pytest --cov=src --cov-report=term-missing 
+* pytest --cov=src --cov-report=html 
 
-***Démarrer l’API localement***
-Avec Uvicorn (recommandé en dev) : 
-uvicorn src.api.main:app --reload
+***Démarrer l’API localement*** avec Uvicorn (recommandé en dev) : 
+* uvicorn src.api.main:app --reload 
+
 L’API est disponible sur :
-Swagger UI : http://127.0.0.1:8000/docs
+* Swagger UI : http://127.0.0.1:8000/docs
