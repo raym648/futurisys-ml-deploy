@@ -169,8 +169,7 @@ jobs:
           set -e
 
           echo "Deploying API to space: $SPACE_NAME"
-
-          git clone https://huggingface.co/spaces/${HF_USERNAME}/${SPACE_NAME} hf-api
+          git clone https://${HF_USERNAME}:${HF_TOKEN}@huggingface.co/spaces/${HF_USERNAME}/${SPACE_NAME} hf-api
           cd hf-api
 
           echo "Sync API source code"
@@ -204,7 +203,7 @@ jobs:
 
           echo "Deploying Dashboard to space: $SPACE_NAME"
 
-          git clone https://huggingface.co/spaces/${HF_USERNAME}/${SPACE_NAME} hf-dashboard
+          git clone https://${HF_USERNAME}:${HF_TOKEN}@huggingface.co/spaces/${HF_USERNAME}/${SPACE_NAME} hf-dashboard
           cd hf-dashboard
 
           echo "Sync dashboard source code"
