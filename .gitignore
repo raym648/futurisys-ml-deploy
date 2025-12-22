@@ -105,3 +105,9 @@ docker-volume/
 # ======================
 .DS_Store
 Thumbs.db
+
+# ========================
+# Explicitly allow lightweight metadata
+# ========================
+!data/ml_artifacts/metadata.json
+!data/processed/e01_df_central_left_clean.csv

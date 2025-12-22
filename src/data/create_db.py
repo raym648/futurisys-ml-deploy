@@ -1,16 +1,14 @@
 # futurisys-ml-deploy/src/data/create_db.py
-# Script pour créer la base et les tables via SQLAlchemy.
-# Lecture de la chaîne de connexion
-# dans la variable d'environnement DATABASE_URL.
+# Script pour créer les tables PostgreSQL via SQLAlchemy (Neon compatible)
 
-
-from src.data.db import engine
+from src.data.db import get_engine
 from src.data.models_db import Base
 
 
 def create_database():
+    engine = get_engine()  # ⚠️ INITIALISATION CRITIQUE
     Base.metadata.create_all(bind=engine)
-    print("✅ Base de données et tables créées")
+    print("✅ Tables créées dans la base Neon")
 
 
 if __name__ == "__main__":

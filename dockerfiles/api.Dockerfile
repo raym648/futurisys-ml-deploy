@@ -18,6 +18,6 @@ COPY src/ ./src/
 
 EXPOSE 7860
 
-HEALTHCHECK CMD curl --fail http://localhost:7860/ || exit 1
+HEALTHCHECK CMD curl --fail http://localhost:7860/docs || exit 1
 
 CMD ["uvicorn", "src.api.main:app", "--host", "0.0.0.0", "--port", "7860"]
