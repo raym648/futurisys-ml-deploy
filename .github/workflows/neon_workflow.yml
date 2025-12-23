@@ -95,11 +95,11 @@ jobs:
       # -------------------------------------------------
       # 6. Création des tables SQLAlchemy sur la branche Neon
       # -------------------------------------------------
-      - name: Create tables in Neon preview database
-        env:
-          DATABASE_URL: ${{ steps.create_neon_branch.outputs.db_url_with_pooler }}
-        run: |
-          python -m src.data.create_db
+      # - name: Create tables in Neon preview database
+      #  env:
+      #    DATABASE_URL: ${{ steps.create_neon_branch.outputs.db_url_with_pooler }}
+      #  run: |
+      #    python -m src.data.create_db
 
   delete_neon_branch:
     name: Delete Neon Branch
