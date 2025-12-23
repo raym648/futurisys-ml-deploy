@@ -161,8 +161,12 @@ La documentation détaillée est disponible dans le dossier `docs/`.
 ---
 
 ## **🛠️ Installation (local)** 
-* pip install -r requirements.txt 
-* export DATABASE_URL="postgresql+psycopg://..." 
+* pip install -r requirements.txt
+* pip install psycopg2-binary
+
+***Commande pour créer les tables BD sur la plateforme **NEON Servless** :*** 
+* export DATABASE_URL=’postgresql+psycopg2://neondb_owner:**********@ep-hidden-cherry-a4q301h4-pooler.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require’
+* python3 -m src.data.create_db
 * uvicorn src.api.main:app --reload 
 
 ---

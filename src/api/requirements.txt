@@ -1,20 +1,20 @@
 # futurisys-ml-deploy/src/api/requirements.txt
 
 # API runtime
-fastapi
+fastapi>=0.110,<0.115
 uvicorn
-pydantic
+pydantic>=2.6,<3.0
 
 # ML runtime
 numpy>=1.26.0
 pandas>=2.1.0
 scipy>=1.11.0
-scikit-learn==1.6.1
+scikit-learn>=1.4,<1.7
 category-encoders>=2.6.3
 joblib>=1.3.0
 
 # DB / env
 sqlalchemy>=1.4
-psycopg2-binary>=2.9.6
+psycopg2-binary>=2.9
 python-dotenv>=1.0.0
 requests>=2.31.0

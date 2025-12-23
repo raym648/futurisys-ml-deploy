@@ -8,8 +8,11 @@ via SQLAlchemy.
 import os
 from contextlib import contextmanager
 
+from dotenv import load_dotenv
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
+
+load_dotenv()
 
 _engine = None
 _SessionLocal: sessionmaker | None = None
@@ -26,6 +29,9 @@ def get_engine():
         _engine = create_engine(
             database_url,
             pool_pre_ping=True,
+            pool_size=5,
+            max_overflow=10,
+            connect_args={"connect_timeout": 10},
             future=True,
         )
 

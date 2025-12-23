@@ -1,3 +1,18 @@
+metadata
+title: Futurisys Dashboard
+emoji: 🚀
+colorFrom: red
+colorTo: red
+sdk: docker
+app_port: 8501
+tags:
+  - streamlit
+  - machine-learning
+  - mlops
+  - dashboard
+pinned: false
+short_description: Dashboard Streamlit pour le monitoring MLOps
+
 
 # 🚀 Futurisys ML – Hugging Face Space
 
