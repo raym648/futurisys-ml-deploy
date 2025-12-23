@@ -1,4 +1,4 @@
-metadata
+---
 title: Futurisys Dashboard
 emoji: 🚀
 colorFrom: red
@@ -12,7 +12,7 @@ tags:
   - dashboard
 pinned: false
 short_description: Dashboard Streamlit pour le monitoring MLOps
-
+---
 
 # 🚀 Futurisys ML – Hugging Face Space
 
