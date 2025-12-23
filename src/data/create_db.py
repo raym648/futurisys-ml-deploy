@@ -6,7 +6,7 @@ from src.data.models_db import Base
 
 
 def create_database():
-    engine = get_engine()  # ⚠️ INITIALISATION CRITIQUE
+    engine = get_engine()
     Base.metadata.create_all(bind=engine)
     print("✅ Tables créées dans la base Neon")
 

@@ -99,7 +99,7 @@ jobs:
       - name: Check if database is already initialized
         id: check_db
         env:
-          DATABASE_URL: ${{ steps.create_neon_branch.outputs.db_url_with_pooler }}
+          DATABASE_URL: ${{ steps.create_neon_branch.outputs.db_url }}
           PYTHONPATH: ${{ github.workspace }}
         run: |
           python -m src.data.check_db_initialized
@@ -109,7 +109,7 @@ jobs:
       - name: Create tables in Neon preview database
         if: steps.check_db.outcome == 'failure'
         env:
-          DATABASE_URL: ${{ steps.create_neon_branch.outputs.db_url_with_pooler }}
+          DATABASE_URL: ${{ steps.create_neon_branch.outputs.db_url }}
           PYTHONPATH: ${{ github.workspace }}
         run: |
           python -m src.data.create_db
@@ -118,7 +118,7 @@ jobs:
       - name: Run Alembic migrations
         if: steps.check_db.outcome == 'success'
         env:
-          DATABASE_URL: ${{ steps.create_neon_branch.outputs.db_url_with_pooler }}
+          DATABASE_URL: ${{ steps.create_neon_branch.outputs.db_url }}
           PYTHONPATH: ${{ github.workspace }}
         run: alembic upgrade head
 
