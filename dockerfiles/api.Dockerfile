@@ -15,6 +15,7 @@ RUN pip install --no-cache-dir --upgrade pip \
     && pip install --no-cache-dir uvicorn
 
 COPY src/ ./src/
+COPY data/ ./data/
 
 EXPOSE 7860
 
