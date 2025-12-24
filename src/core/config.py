@@ -13,7 +13,7 @@ class Settings(BaseSettings):
         if self.database_url:
             return self.database_url
         if os.getenv("ENV") == "test":
-            return "sqlite+aiosqlite:///:memory:"
+            return "sqlite+asyncpg:///:memory:"
         raise ValueError("DATABASE_URL is required")
 
     model_config = SettingsConfigDict(
