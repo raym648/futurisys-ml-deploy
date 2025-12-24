@@ -52,7 +52,7 @@ def mock_predict(monkeypatch):
 
     # IMPORTANT : patcher là où la fonction est utilisée
     monkeypatch.setattr(
-        "src.api.routes.predict.ml_predict",
+        "src.api.routes.predictions.ml_predict",
         fake_predict,
     )
 

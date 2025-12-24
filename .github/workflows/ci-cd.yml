@@ -93,7 +93,6 @@ jobs:
       - name: Run functional tests
         env:
           PYTHONPATH: .
-          DATABASE_URL: "sqlite+pysqlite:///:memory:"
           ENV: test
         run: |
           pytest tests/functional/
@@ -104,7 +103,6 @@ jobs:
       - name: Run coverage report
         env:
           PYTHONPATH: .
-          DATABASE_URL: "sqlite+pysqlite:///:memory:"
           ENV: test
         run: |
           pytest \
