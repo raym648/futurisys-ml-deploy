@@ -179,6 +179,9 @@ jobs:
           echo "Sync API data"
           rsync -av --delete ../data/ ./data/
 
+          echo "Sync API docs"
+          rsync -av --delete ../docs/ ./docs/
+
           echo "Sync API requirements"
           rsync -av ../src/api/requirements.txt ./requirements.txt
 
