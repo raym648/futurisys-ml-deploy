@@ -73,6 +73,7 @@ jobs:
       - name: Run unit tests
         env:
           PYTHONPATH: .
+          DATABASE_URL: "sqlite+aiosqlite:///:memory:"
           ENV: test
         run: |
           pytest tests/unit/
@@ -83,6 +84,7 @@ jobs:
       - name: Run schema tests
         env:
           PYTHONPATH: .
+          DATABASE_URL: "sqlite+aiosqlite:///:memory:"
           ENV: test
         run: |
           pytest tests/schemas/
@@ -93,6 +95,7 @@ jobs:
       - name: Run functional tests
         env:
           PYTHONPATH: .
+          DATABASE_URL: "sqlite+aiosqlite:///:memory:"
           ENV: test
         run: |
           pytest tests/functional/
@@ -103,6 +106,7 @@ jobs:
       - name: Run coverage report
         env:
           PYTHONPATH: .
+          DATABASE_URL: "sqlite+aiosqlite:///:memory:"
           ENV: test
         run: |
           pytest \
