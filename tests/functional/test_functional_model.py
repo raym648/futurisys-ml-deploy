@@ -126,16 +126,21 @@ def test_get_prediction_result_not_found(mock_async_session):
     → 404 Prediction request not found
     """
 
-    # Mock du résultat SQLAlchemy
-    execute_result_mock = AsyncMock()
-    execute_result_mock.scalar_one_or_none.return_value = None
+    # 1️⃣ Mock du résultat SQLAlchemy (objet RESULT, sync)
+    class FakeResult:
+        def scalar_one_or_none(self):
+            return None
 
-    # session.execute() doit retourner cet objet
-    mock_async_session.execute = AsyncMock(return_value=execute_result_mock)
+    # 2️⃣ session.execute est async et retourne FakeResult
+    async def fake_execute(*args, **kwargs):
+        return FakeResult()
 
+    mock_async_session.execute.side_effect = fake_execute
+
+    # 3️⃣ Appel API
     request_id = uuid4()
-
     response = client.get(f"/predictions/{request_id}")
 
+    # 4️⃣ Assertions
     assert response.status_code == 404
     assert response.json()["detail"] == "Prediction request not found"
