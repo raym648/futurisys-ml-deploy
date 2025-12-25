@@ -2,6 +2,7 @@
 # 🐍 Vérifier si la base est déjà initialisée
 
 import os
+import sys
 
 from sqlalchemy import create_engine, inspect
 
@@ -15,15 +16,16 @@ def main():
     inspector = inspect(engine)
 
     tables = inspector.get_table_names()
+    print(f"Found {len(tables)} tables: {tables}")
 
     if tables:
         print("Database already initialized")
         # → on signale que la DB existe
-        exit(0)
+        sys.exit(0)
     else:
         print("Database empty")
         # → on signale que la DB est vide
-        exit(1)
+        sys.exit(1)
 
 
 if __name__ == "__main__":

@@ -98,12 +98,12 @@ jobs:
       # Étape 1 — Vérifier la DB
       - name: Check if database is already initialized
         id: check_db
+        continue-on-error: true   # 👈 CLÉ
         env:
           DATABASE_URL: ${{ steps.create_neon_branch.outputs.db_url }}
           PYTHONPATH: ${{ github.workspace }}
         run: |
           python -m src.data.check_db_initialized
-        continue-on-error: true
 
       # Étape 2 — Créer les tables seulement si nécessaire
       - name: Create tables in Neon preview database

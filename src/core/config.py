@@ -1,19 +1,16 @@
 # futurisys-ml-deploy/src/core/config.py
 
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic import Field
+from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
-    database_url: str = ""  # default vide pour le typage
-
-    model_config = SettingsConfigDict(
-        env_prefix="",
-        extra="ignore",
-    )
+    database_url: str = Field("", validation_alias="DATABASE_URL")
 
 
-settings = Settings()
+settings = Settings()  # type: ignore[call-arg]
 
-# Validation explicite
+
+# Fail fast (CI / prod)
 if not settings.database_url:
     raise RuntimeError("DATABASE_URL environment variable is required")
