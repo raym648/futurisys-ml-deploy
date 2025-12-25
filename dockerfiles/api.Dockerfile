@@ -16,6 +16,8 @@ RUN pip install --no-cache-dir --upgrade pip \
 
 COPY src/ ./src/
 COPY data/ ./data/
+COPY docs/ ./docs/
+
 
 EXPOSE 7860
 

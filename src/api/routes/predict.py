@@ -1,40 +1,132 @@
 # futurisys-ml-deploy/src/api/routes/predict.py
 
-import uuid
+"""
+Routes de gestion des prédictions ML (DB-first).
+- Soumission de requête de prédiction (sans inférence directe)
+- Consultation du statut et du résultat (polling)
+"""
 
-from fastapi import APIRouter, HTTPException, Query
+from datetime import datetime
+from uuid import UUID
 
-from src.api.schemas import PredictionInput, PredictionResponse
-from src.ml.predictor import predict as ml_predict
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
-# Le prefix est géré dans main.py (app.include_router(..., prefix="/predict"))
-router = APIRouter()
-
-
-@router.post(
-    "",  # ⬅️ endpoint final : POST /predict
-    response_model=PredictionResponse,
-    tags=["Prediction"],
+from db.models import PredictionRequest, PredictionResult
+from src.api.schemas.input import PredictionInput
+from src.api.schemas.output import (
+    PredictionRequestResponse,
+    PredictionResultResponse,
 )
-def predict(
+from src.db.session import get_async_session
+
+router = APIRouter(tags=["Predictions"])
+
+
+# ============================================================
+# POST /predictions/request
+# ============================================================
+@router.post(
+    "/predictions/request",
+    response_model=PredictionRequestResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+async def submit_prediction_request(
     payload: PredictionInput,
-    model: str = Query("default", description="Nom du modèle ML"),
+    model_name: str = "default",
+    source: str = "api",
+    session: AsyncSession = Depends(get_async_session),
 ):
     """
-    Endpoint de prédiction ML.
-
-    - Validation des entrées assurée par Pydantic (422)
-    - Erreurs métier ML traduites en erreurs HTTP (400)
+    Enregistre une requête de prédiction en base.
+    Aucune inférence n'est réalisée ici.
     """
+
+    prediction_request = PredictionRequest(
+        model_name=model_name,
+        source=source,
+        inputs=payload.model_dump(),
+        status="PENDING",
+        created_at=datetime.utcnow(),
+    )
+
+    session.add(prediction_request)
+
     try:
-        result = ml_predict(payload.model_dump(), model_name=model)
+        await session.commit()
+        await session.refresh(prediction_request)
+    except Exception as exc:
+        await session.rollback()
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to create prediction request: {exc}",
+        )
 
-    except ValueError as exc:
-        # Erreur métier (modèle inconnu, feature invalide, etc.)
-        raise HTTPException(status_code=400, detail=str(exc))
+    return PredictionRequestResponse(
+        request_id=str(prediction_request.id),
+        status=prediction_request.status,
+        created_at=prediction_request.created_at,
+    )
 
-    return PredictionResponse(
-        request_id=str(uuid.uuid4()),
-        prediction=result["prediction"],
-        probability=result["probability"],
+
+# ============================================================
+# GET /predictions/{request_id}
+# ============================================================
+@router.get(
+    "/predictions/{request_id}",
+    response_model=PredictionResultResponse,
+)
+async def get_prediction_result(
+    request_id: UUID,
+    session: AsyncSession = Depends(get_async_session),
+):
+    """
+    Récupère le statut et le résultat d'une prédiction.
+    Compatible avec le polling.
+    """
+
+    # ---- Requête de prédiction
+    stmt_request = select(PredictionRequest).where(
+        # fmt: off
+        PredictionRequest.id == request_id
+        # fmt: on
+    )
+    result_request = await session.execute(stmt_request)
+    request = result_request.scalar_one_or_none()
+
+    if request is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Prediction request not found",
+        )
+
+    # ---- Résultat de prédiction (optionnel)
+    stmt_result = select(PredictionResult).where(
+        PredictionResult.request_id == request_id
+    )
+    result_result = await session.execute(stmt_result)
+    prediction_result = result_result.scalar_one_or_none()
+
+    # ---- Cas : résultat non encore disponible
+    if prediction_result is None:
+        return PredictionResultResponse(
+            request_id=str(request.id),
+            status=request.status,
+            prediction=None,
+            probability=None,
+            model_name=None,
+            model_version=None,
+            created_at=request.created_at,
+        )
+
+    # ---- Cas : résultat disponible
+    return PredictionResultResponse(
+        request_id=str(request.id),
+        status="DONE",
+        prediction=prediction_result.prediction,
+        probability=prediction_result.probability,
+        model_name=prediction_result.model_name,
+        model_version=prediction_result.model_version,
+        created_at=prediction_result.created_at,
     )

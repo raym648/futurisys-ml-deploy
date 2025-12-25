@@ -73,6 +73,7 @@ jobs:
       - name: Run unit tests
         env:
           PYTHONPATH: .
+          DATABASE_URL: "sqlite+aiosqlite:///:memory:"
           ENV: test
         run: |
           pytest tests/unit/
@@ -83,6 +84,7 @@ jobs:
       - name: Run schema tests
         env:
           PYTHONPATH: .
+          DATABASE_URL: "sqlite+aiosqlite:///:memory:"
           ENV: test
         run: |
           pytest tests/schemas/
@@ -93,7 +95,7 @@ jobs:
       - name: Run functional tests
         env:
           PYTHONPATH: .
-          DATABASE_URL: "sqlite+pysqlite:///:memory:"
+          DATABASE_URL: "sqlite+aiosqlite:///:memory:"
           ENV: test
         run: |
           pytest tests/functional/
@@ -104,7 +106,7 @@ jobs:
       - name: Run coverage report
         env:
           PYTHONPATH: .
-          DATABASE_URL: "sqlite+pysqlite:///:memory:"
+          DATABASE_URL: "sqlite+aiosqlite:///:memory:"
           ENV: test
         run: |
           pytest \
@@ -119,6 +121,7 @@ jobs:
       - name: Smoke test FastAPI (no ML logic)
         env:
           PYTHONPATH: .
+          DATABASE_URL: "sqlite+aiosqlite:///:memory:"
           ENV: test
         run: |
           python - << 'EOF'
@@ -178,6 +181,9 @@ jobs:
 
           echo "Sync API data"
           rsync -av --delete ../data/ ./data/
+
+          echo "Sync API docs"
+          rsync -av --delete ../docs/ ./docs/
 
           echo "Sync API requirements"
           rsync -av ../src/api/requirements.txt ./requirements.txt

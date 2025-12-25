@@ -2,10 +2,11 @@
 
 from .enums import FrequenceDeplacement
 from .input import PredictionInput
-from .output import PredictionResponse
+from .output import PredictionRequestResponse, PredictionResultResponse
 
 __all__ = [
     "PredictionInput",
-    "PredictionResponse",
+    "PredictionRequestResponse",
+    "PredictionResultResponse",
     "FrequenceDeplacement",
 ]

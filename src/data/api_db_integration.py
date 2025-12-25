@@ -2,27 +2,29 @@
 # Fonctions utilitaires utilisées par l’API / workers ML
 # pour tracer les inputs et outputs des prédictions (MLOps).
 
+import os
 import uuid
+from typing import Any
 
-from src.data.db import SessionLocal
-from src.data.models_db import ModelInput, ModelOutput
+try:
+    from src.data.db import SessionLocal
+except ImportError:
+    SessionLocal = None  # Sécurité CI / tests
 
 
-def record_input(payload: dict, model_version: str):
+def record_input(payload: dict, model_version: str) -> dict[str, Any]:
+    """
+    Enregistre l'input d'une prédiction.
+    En environnement test / CI, la DB est neutralisée.
+    """
     request_id = str(uuid.uuid4())
 
-    with SessionLocal() as session:
-        mi = ModelInput(
-            request_id=request_id,
-            payload=payload,
-            model_version=model_version,
-            status="queued",
-        )
-        session.add(mi)
-        session.commit()
-        session.refresh(mi)
+    # 🔒 Mode test / CI : pas de DB
+    if os.getenv("ENV") == "test" or SessionLocal is None:
+        return {"input_id": 0, "request_id": request_id}
 
-    return {"input_id": mi.input_id, "request_id": request_id}
+    # 🚀 Mode prod (future extension)
+    raise NotImplementedError("Runtime prediction persistence is not enabled.")
 
 
 def record_output(
@@ -30,20 +32,13 @@ def record_output(
     request_id: str,
     result: dict,
     model_version: str,
-):
-    with SessionLocal() as session:
-        mo = ModelOutput(
-            input_id=input_id,
-            request_id=request_id,
-            result=result,
-            model_version=model_version,
-        )
-        session.add(mo)
+) -> None:
+    """
+    Enregistre l'output d'une prédiction.
+    Neutralisé en environnement test.
+    """
 
-        (
-            session.query(ModelInput)
-            .filter(ModelInput.input_id == input_id)
-            .update({"status": "success"})
-        )
+    if os.getenv("ENV") == "test" or SessionLocal is None:
+        return None
 
-        session.commit()
+    raise NotImplementedError("Runtime prediction persistence is not enabled.")

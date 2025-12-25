@@ -1,7 +1,6 @@
 # futurisys-ml-deploy/dashboard/app.py
 # Streamlit dashboard connecté à l'API Futurisys ML
 
-
 import os
 
 import altair as alt
@@ -9,63 +8,92 @@ import pandas as pd
 import requests
 import streamlit as st
 
-# API_BASE_URL = st.secrets.get("API_BASE_URL") or os.getenv("API_BASE_URL")
+# import time
+
+
+# ============================================================
+# API BASE URL
+# ============================================================
 API_BASE_URL = (
     (st.secrets.get("API_BASE_URL") or os.getenv("API_BASE_URL", ""))
     .strip()
     .rstrip("/")
 )
 
-
 if not API_BASE_URL:
     st.error(
-        # fmt: off
-        "API_BASE_URL is not configured."
-        "Please set it in Hugging Face Secrets."
-        # fmt: on
+        "API_BASE_URL is not configured. "
+        "Please set it in Hugging Face Secrets or environment variables."
     )
     st.stop()
 
-
-st.set_page_config(page_title="Futurisys ML Dashboard", layout="wide")
+# ============================================================
+# STREAMLIT CONFIG
+# ============================================================
+st.set_page_config(
+    page_title="Futurisys ML Dashboard",
+    layout="wide",
+)
 
 st.title("📊 Futurisys ML – Monitoring & Inference Dashboard")
 
-# -----------------------------
-# Sidebar navigation
-# -----------------------------
+# ============================================================
+# DOCUMENTATION FILES
+# ============================================================
+DOCS_PATH = "docs"
+
+DOCS_PAGES = {
+    "📘 API": "api.md",
+    "🏗️ Architecture": "architecture.md",
+    "🧠 Model": "model.md",
+    "📈 Monitoring": "monitoring.md",
+    "🧪 Tests": "tests.md",
+    "🔁 Update Policy": "update_policy.md",
+}
+
+# ============================================================
+# SIDEBAR NAVIGATION
+# ============================================================
 page = st.sidebar.radio(
     "Navigation",
     [
         "🔎 Overview",
         "🧪 Metrics & Monitoring",
         "🧠 Model Comparison",
+        "🤖 Submit Prediction Request",
         "🧾 Prediction History",
-        "🤖 Predict",
+        "📚 Documentation API",
     ],
 )
 
 
-# -----------------------------
-# Helpers
-# -----------------------------
-
-
+# ============================================================
+# API HELPERS
+# ============================================================
 def api_get(path: str):
-    r = requests.get(f"{API_BASE_URL}{path}", timeout=10)
+    r = requests.get(
+        f"{API_BASE_URL}{path}",
+        timeout=15,
+        headers={"User-Agent": "futurisys-dashboard"},
+    )
     r.raise_for_status()
     return r.json()
 
 
 def api_post(path: str, payload: dict):
-    r = requests.post(f"{API_BASE_URL}{path}", json=payload, timeout=10)
+    r = requests.post(
+        f"{API_BASE_URL}{path}",
+        json=payload,
+        timeout=15,
+        headers={"User-Agent": "futurisys-dashboard"},
+    )
     r.raise_for_status()
     return r.json()
 
 
-# -----------------------------
-# Overview
-# -----------------------------
+# ============================================================
+# OVERVIEW
+# ============================================================
 if page == "🔎 Overview":
     st.header("🔎 API Overview")
 
@@ -75,46 +103,58 @@ if page == "🔎 Overview":
     col1, col2 = st.columns(2)
 
     with col1:
-        st.subheader("📦 Metadata")
+        st.subheader("📦 API Metadata")
         st.json(metadata)
 
     with col2:
-        st.subheader("🧠 Available models")
+        st.subheader("🧠 Available Models")
         st.json(models)
 
-# -----------------------------
-# Metrics & Monitoring
-# -----------------------------
+# ============================================================
+# METRICS & MONITORING
+# ============================================================
 elif page == "🧪 Metrics & Monitoring":
     st.header("🧪 Metrics & Monitoring")
 
-    metrics = api_get("/metrics/")
+    metrics = api_get("/metrics/summary")
     df = pd.DataFrame(metrics)
 
-    st.dataframe(df)
+    if df.empty:
+        st.warning("No metrics available.")
+        st.stop()
 
-    st.subheader("📈 Key metrics")
+    st.dataframe(df, use_container_width=True)
 
-    if not df.empty:
+    if {"model", "pr_auc_mean"}.issubset(df.columns):
+        st.subheader("📈 PR-AUC Mean per Model")
+
         chart = (
             alt.Chart(df)
             .mark_bar()
             .encode(
-                x="model:N",
-                y="roc_auc:Q",
+                x=alt.X("model:N", title="Model"),
+                y=alt.Y("pr_auc_mean:Q", title="PR-AUC Mean"),
                 color="model:N",
+                tooltip=list(df.columns),
             )
         )
-        st.altair_chart(chart, use_container_width=True)
 
-# -----------------------------
-# Model comparison
-# -----------------------------
+        st.altair_chart(chart, use_container_width=True)
+    else:
+        st.warning("Metrics format is incomplete.")
+
+# ============================================================
+# MODEL COMPARISON
+# ============================================================
 elif page == "🧠 Model Comparison":
     st.header("🧠 Model Comparison")
 
-    metrics = api_get("/metrics/")
+    metrics = api_get("/metrics/summary")
     df = pd.DataFrame(metrics)
+
+    if df.empty or "model" not in df.columns:
+        st.error("Invalid metrics format received from API.")
+        st.stop()
 
     selected_models = st.multiselect(
         "Select models",
@@ -125,63 +165,124 @@ elif page == "🧠 Model Comparison":
     df_sel = df[df["model"].isin(selected_models)]
 
     metric = st.selectbox(
-        "Metric", ["accuracy", "precision", "recall", "f1", "roc_auc"]
+        "Metric",
+        [c for c in df.columns if c != "model"],
     )
-
-    y_encoding = metric + ":Q"
 
     chart = (
         alt.Chart(df_sel)
         .mark_bar()
         .encode(
-            x="model:N",  # noqa: E231
-            y=y_encoding,
-            color="model:N",  # noqa: E231
+            x=alt.X("model:N", title="Model"),
+            y=alt.Y(f"{metric}:Q", title=metric),
+            color="model:N",
+            tooltip=list(df_sel.columns),
         )
     )
 
     st.altair_chart(chart, use_container_width=True)
 
-# -----------------------------
-# Prediction history
-# -----------------------------
+# ============================================================
+# PREDICTION HISTORY
+# ============================================================
 elif page == "🧾 Prediction History":
     st.header("🧾 Prediction History")
 
-    history = api_get("/dataset/")
+    history = api_get("/predictions/history")
     df = pd.DataFrame(history)
 
-    st.dataframe(df)
+    if df.empty:
+        st.info("No prediction history available.")
+    else:
+        st.dataframe(df, use_container_width=True)
 
-# -----------------------------
-# Prediction
-# -----------------------------
-elif page == "🤖 Predict":
-    st.header("🤖 Make a prediction")
-
-    models = api_get("/models/")
-    model_name = st.selectbox(
-        "Model",
-        models.get("available", []),
-        index=models.get("default_index", 0),
+# ============================================================
+# SUBMIT PREDICTION REQUEST
+# ============================================================
+elif page == "🤖 Submit Prediction Request":
+    st.header("🤖 Submit a Prediction Request")
+    st.caption(
+        "All prediction requests are stored in the database first. "
+        "Inference is handled asynchronously by the backend."
     )
 
-    with st.form("predict_form"):
-        id_employee = st.number_input("Employee ID", step=1)
-        age = st.number_input("Age", step=1)
-        revenu = st.number_input("Monthly income", step=100)
+    models = api_get("/models/")
+    available_models = models.get("available_models", [])
+    default_model = models.get("default_model")
 
-        submitted = st.form_submit_button("Predict")
+    if not available_models:
+        st.error("❌ No model available from API.")
+        st.stop()
+
+    default_index = (
+        available_models.index(default_model)
+        if default_model in available_models
+        else 0
+    )
+
+    model_name = st.selectbox(
+        "Model",
+        available_models,
+        index=default_index,
+    )
+
+    with st.form("prediction_request_form"):
+        age = st.number_input("Age", min_value=18, max_value=70, step=1)
+        revenu = st.number_input(
+            # fmt: off
+            "Monthly income (€)", min_value=1.0, step=100.0
+            # fmt: on
+        )
+        anciennete = st.number_input(
+            # fmt: off
+            "Years in company",
+            min_value=0, step=1
+            # fmt: on
+        )
+        frequence = st.selectbox(
+            "Travel frequency",
+            ["aucun", "occasionnel", "frequent"],
+        )
+
+        submitted = st.form_submit_button("Submit request")
 
     if submitted:
         payload = {
-            "id_employee": id_employee,
-            "age": age,
-            "revenu_mensuel": revenu,
-            "model": model_name,
+            "model_name": model_name,
+            "source": "dashboard",
+            "inputs": {
+                "age": int(age),
+                "revenu_mensuel": float(revenu),
+                "annees_dans_l_entreprise": int(anciennete),
+                "frequence_deplacement": frequence,
+            },
         }
 
-        result = api_post("/predict/", payload)
+        result = api_post("/predictions/request", payload)
 
-        st.success("Prediction completed")
-        st.json(result)
+        request_id = result.get("request_id")
+        status = result.get("status", "UNKNOWN")
+
+        st.success("✅ Prediction request submitted")
+        st.write(f"**Request ID:** `{request_id}`")
+        st.write(f"**Status:** `{status}`")
+
+# ============================================================
+# DOCUMENTATION
+# ============================================================
+elif page == "📚 Documentation API":
+    st.header("📚 Documentation API")
+
+    doc_choice = st.selectbox(
+        "Select documentation",
+        list(DOCS_PAGES.keys()),
+    )
+
+    doc_file = DOCS_PAGES[doc_choice]
+    doc_path = os.path.join(DOCS_PATH, doc_file)
+
+    if not os.path.exists(doc_path):
+        st.error(f"❌ Documentation file not found: `{doc_path}`")
+    else:
+        with open(doc_path, "r", encoding="utf-8") as f:
+            st.markdown(f.read(), unsafe_allow_html=True)
