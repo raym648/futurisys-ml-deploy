@@ -1,48 +1,75 @@
 # futurisys-ml-deploy/tests/functional/test_functional_model.py
 
+from contextlib import asynccontextmanager
 from unittest.mock import AsyncMock
 
 import pytest
 from fastapi.testclient import TestClient
 
 from src.api.main import app
+from src.db.session import get_async_session
+
+# ============================================================
+# Test client FastAPI
+# ============================================================
 
 client = TestClient(app)
 
 
 # ============================================================
-# Fixtures – Mock Async DB session
+# Fake AsyncSession (mock DB layer)
+# ============================================================
+
+
+@asynccontextmanager
+async def fake_async_session():
+    """
+    Fake Async SQLAlchemy session used to isolate
+    functional API tests from the real database.
+    """
+    session = AsyncMock()
+
+    # --- INSERT / UPDATE ---
+    session.add.return_value = None
+    session.commit.return_value = None
+    session.refresh.return_value = None
+
+    # --- SELECT ---
+    mock_result = AsyncMock()
+    mock_result.scalar_one_or_none.return_value = None
+    session.execute.return_value = mock_result
+
+    yield session
+
+
+# ============================================================
+# Dependency override (applied automatically)
 # ============================================================
 
 
 @pytest.fixture(autouse=True)
-def mock_async_session(monkeypatch):
+def override_async_db():
     """
-    Mocke la session async SQLAlchemy utilisée par Depends(get_async_session)
+    Override get_async_session dependency for all tests
+    in this module.
     """
-
-    async def fake_get_async_session():
-        session = AsyncMock()
-
-        # session.execute().scalar_one_or_none() -> None
-        session.execute.return_value.scalar_one_or_none.return_value = None
-
-        yield session
-
-    monkeypatch.setattr(
-        "src.api.routes.predictions.get_async_session",
-        fake_get_async_session,
-    )
+    app.dependency_overrides[get_async_session] = fake_async_session
+    yield
+    app.dependency_overrides.clear()
 
 
 # ============================================================
-# Tests fonctionnels /predictions/request
+# Functional tests
 # ============================================================
 
 
 def test_create_prediction_request_success():
     """
-    Cas nominal : payload valide → requête créée (201)
+    Cas nominal :
+    - payload valide
+    - route existante
+    - DB mockée
+    → 201 Created
     """
     payload = {
         "age": 30,
@@ -57,15 +84,17 @@ def test_create_prediction_request_success():
     )
 
     assert response.status_code == 201
-
     body = response.json()
     assert "request_id" in body
-    assert body["status"] == "pending"
+    assert body["status"] == "created"
 
 
 def test_create_prediction_request_invalid_enum():
     """
-    Cas erreur utilisateur : Enum invalide → 422
+    Cas erreur utilisateur :
+    - Enum invalide
+    → validation Pydantic
+    → 422 Unprocessable Entity
     """
     payload = {
         "age": 30,
@@ -75,23 +104,24 @@ def test_create_prediction_request_invalid_enum():
     }
 
     response = client.post(
-        "/predictions/request",
+        "/predictions/request?model_name=baseline",
         json=payload,
     )
 
     assert response.status_code == 422
 
 
-# ============================================================
-# Tests fonctionnels GET /predictions/{request_id}
-# ============================================================
-
-
 def test_get_prediction_result_not_found():
     """
-    Cas : request_id inconnu → 404
+    Cas nominal négatif :
+    - ID inexistant
+    - SELECT retourne None
+    → 404 Not Found
     """
-    response = client.get("/predictions/00000000-0000-0000-0000-000000000000")
+    response = client.get(
+        "/predictions/result/999999",
+    )
 
     assert response.status_code == 404
-    assert "not found" in response.json()["detail"].lower()
+    body = response.json()
+    assert body["detail"] == "Prediction request not found"
