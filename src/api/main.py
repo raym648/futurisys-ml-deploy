@@ -24,11 +24,7 @@ app.include_router(dataset_router)
 # Routes ML prediction
 # ============================================================
 
-app.include_router(
-    predictions_router,
-    prefix="/predictions",
-    tags=["Predictions"],
-)
+app.include_router(predictions_router)
 
 # ============================================================
 # Routes metadata (artefacts)
