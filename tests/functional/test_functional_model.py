@@ -35,7 +35,8 @@ def mock_async_session():
     """
     session = AsyncMock()
 
-    session.add.return_value = None
+    # session.add.return_value = None
+    session.add = lambda _: None
     session.commit.return_value = None
     session.refresh.return_value = None
     session.rollback.return_value = None
@@ -126,9 +127,11 @@ def test_get_prediction_result_not_found(mock_async_session):
     """
 
     # Mock du résultat SQLAlchemy
-    result_mock = AsyncMock()
-    result_mock.scalar_one_or_none.return_value = None
-    mock_async_session.execute.return_value = result_mock
+    execute_result_mock = AsyncMock()
+    execute_result_mock.scalar_one_or_none.return_value = None
+
+    # session.execute() doit retourner cet objet
+    mock_async_session.execute = AsyncMock(return_value=execute_result_mock)
 
     request_id = uuid4()
 

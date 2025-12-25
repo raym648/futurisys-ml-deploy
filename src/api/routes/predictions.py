@@ -8,7 +8,7 @@ Routes de gestion des prédictions ML (DB-first).
 - Aucune inférence ML n'est exécutée ici
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import List
 from uuid import UUID, uuid4
 
@@ -53,7 +53,7 @@ async def submit_prediction_request(
     """
 
     request_uuid = str(uuid4())
-    now = datetime.utcnow()
+    now = datetime.now(UTC)
 
     prediction_request = PredictionRequest(
         request_id=request_uuid,
