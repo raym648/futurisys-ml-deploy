@@ -102,8 +102,7 @@ jobs:
           DATABASE_URL: ${{ steps.create_neon_branch.outputs.db_url }}
           PYTHONPATH: ${{ github.workspace }}
         run: |
-          python -m src.data.check_db_initialized
-        continue-on-error: true
+          python -m src.data.check_db_initialized || exit 1
 
       # Étape 2 — Créer les tables seulement si nécessaire
       - name: Create tables in Neon preview database
