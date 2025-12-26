@@ -163,8 +163,10 @@ elif page == "🧠 Model Comparison":
         alt.Chart(df_sel)
         .mark_bar()
         .encode(
-            x=alt.X("model: N", title="Model"),
-            y=alt.Y(f"{metric}: Q", title=metric),
+            # x=alt.X("model: N", title="Model"),
+            # y=alt.Y(f"{metric}: Q", title=metric),
+            x=alt.X(field="model", type="nominal", title="Model"),
+            y=alt.Y(field=metric, type="quantitative", title=metric),
             color="model:N",
             tooltip=list(df_sel.columns),
         )
