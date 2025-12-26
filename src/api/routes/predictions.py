@@ -117,8 +117,8 @@ async def get_prediction_history(
     for r in results:
         history.append(
             PredictionResultResponse(
-                request_id=str(r.request_id),
-                status=PredictionStatus.completed,
+                request_id=r.request.request_id,  # ✅ UUID métier
+                status=PredictionStatus.completed.value,
                 prediction=r.prediction,
                 probability=r.probability,
                 created_at=r.created_at,
@@ -148,6 +148,7 @@ async def get_prediction_result(
     stmt_request = select(PredictionRequest).where(
         PredictionRequest.request_id == str(request_id)
     )
+
     result_request = await session.execute(stmt_request)
     prediction_request = result_request.scalar_one_or_none()
 
@@ -160,6 +161,7 @@ async def get_prediction_result(
     stmt_result = select(PredictionResult).where(
         PredictionResult.request_id == prediction_request.id
     )
+
     result_result = await session.execute(stmt_result)
     prediction_result = result_result.scalar_one_or_none()
 
@@ -174,7 +176,7 @@ async def get_prediction_result(
     # Résultat disponible
     return PredictionResultResponse(
         request_id=prediction_request.request_id,
-        status=PredictionStatus.completed,
+        status=PredictionStatus.completed.value,
         prediction=prediction_result.prediction,
         probability=prediction_result.probability,
         created_at=prediction_result.created_at,
