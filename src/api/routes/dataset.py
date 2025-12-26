@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from src.api.deps import get_db
-from src.data.models_db import Dataset
+from src.data.models_db_archive import Dataset
 
 router = APIRouter(prefix="/dataset", tags=["Dataset"])
 

@@ -6,19 +6,9 @@ import uuid
 from datetime import datetime
 from typing import Dict, Optional
 
-from sqlalchemy import (
-    DateTime,
-    Float,
-    ForeignKey,
-    String,
-)
+from sqlalchemy import DateTime, Float, ForeignKey, String
 from sqlalchemy.dialects.postgresql import JSONB, UUID
-from sqlalchemy.orm import (
-    DeclarativeBase,
-    Mapped,
-    mapped_column,
-    relationship,
-)
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 
 # ============================================================
