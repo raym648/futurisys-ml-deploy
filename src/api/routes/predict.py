@@ -13,9 +13,9 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from db.models import PredictionRequest, PredictionResult
+from db.models_archive import PredictionRequest, PredictionResult
 from src.api.schemas.input import PredictionInput
-from src.api.schemas.output import (
+from src.api.schemas.output import (  # fmt: off; fmt: on
     PredictionRequestResponse,
     PredictionResultResponse,
 )

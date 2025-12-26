@@ -13,7 +13,7 @@ from pathlib import Path
 import pandas as pd
 
 from src.data.db import SessionLocal
-from src.data.models_db import Dataset
+from src.data.models_db_archive import Dataset
 
 
 def load_csv_to_db(
@@ -37,7 +37,7 @@ def load_csv_to_db(
     csv_path = Path(csv_path)
 
     if not csv_path.exists():
-        raise FileNotFoundError(f"❌ Fichier CSV introuvable : {csv_path}")
+        raise FileNotFoundError(f"❌ Fichier CSV introuvable: {csv_path}")
 
     df = pd.read_csv(csv_path)
 

@@ -17,7 +17,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.api.schemas.input import PredictionInput
-from src.api.schemas.output import (
+from src.api.schemas.output import (  # fmt: off; fmt: on
     PredictionRequestResponse,
     PredictionResultResponse,
 )
@@ -87,6 +87,48 @@ async def submit_prediction_request(
 
 
 # ============================================================
+# PREDICTION HISTORY
+# GET /predictions/history
+# ============================================================
+@router.get(
+    "/history",
+    response_model=List[PredictionResultResponse],
+)
+async def get_prediction_history(
+    limit: int = Query(50, ge=1, le=500),
+    session: AsyncSession = Depends(get_async_session),
+):
+    """
+    Retourne l'historique des prédictions terminées.
+    Utilisé par la page 'Prediction History' du dashboard.
+    """
+
+    stmt = (
+        select(PredictionResult)
+        .order_by(PredictionResult.created_at.desc())
+        .limit(limit)
+    )
+
+    result = await session.execute(stmt)
+    results = result.scalars().all()
+
+    history: List[PredictionResultResponse] = []
+
+    for r in results:
+        history.append(
+            PredictionResultResponse(
+                request_id=str(r.request_id),
+                status=PredictionStatus.completed,
+                prediction=r.prediction,
+                probability=r.probability,
+                created_at=r.created_at,
+            )
+        )
+
+    return history
+
+
+# ============================================================
 # GET PREDICTION RESULT (POLLING)
 # GET /predictions/{request_id}
 # ============================================================
@@ -137,45 +179,3 @@ async def get_prediction_result(
         probability=prediction_result.probability,
         created_at=prediction_result.created_at,
     )
-
-
-# ============================================================
-# PREDICTION HISTORY
-# GET /predictions/history
-# ============================================================
-@router.get(
-    "/history",
-    response_model=List[PredictionResultResponse],
-)
-async def get_prediction_history(
-    limit: int = Query(50, ge=1, le=500),
-    session: AsyncSession = Depends(get_async_session),
-):
-    """
-    Retourne l'historique des prédictions terminées.
-    Utilisé par la page 'Prediction History' du dashboard.
-    """
-
-    stmt = (
-        select(PredictionResult)
-        .order_by(PredictionResult.created_at.desc())
-        .limit(limit)
-    )
-
-    result = await session.execute(stmt)
-    results = result.scalars().all()
-
-    history: List[PredictionResultResponse] = []
-
-    for r in results:
-        history.append(
-            PredictionResultResponse(
-                request_id=str(r.request_id),
-                status=PredictionStatus.completed,
-                prediction=r.prediction,
-                probability=r.probability,
-                created_at=r.created_at,
-            )
-        )
-
-    return history
