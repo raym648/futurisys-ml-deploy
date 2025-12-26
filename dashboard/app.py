@@ -10,9 +10,7 @@ import streamlit as st
 
 # from textwrap import dedent
 
-
 # import time
-
 
 # ============================================================
 # API BASE URL
@@ -70,10 +68,11 @@ def api_get(path: str):
     return r.json()
 
 
-def api_post(path: str, payload: dict):
+def api_post(path: str, payload: dict, params: dict | None = None):
     r = requests.post(
         f"{API_BASE_URL}{path}",
         json=payload,
+        params=params,
         timeout=15,
         headers={"User-Agent": "futurisys-dashboard"},
     )
@@ -240,17 +239,22 @@ elif page == "🤖 Submit Prediction Request":
 
     if submitted:
         payload = {
-            "model_name": model_name,
-            "source": "dashboard",
-            "inputs": {
-                "age": int(age),
-                "revenu_mensuel": float(revenu),
-                "annees_dans_l_entreprise": int(anciennete),
-                "frequence_deplacement": frequence,
-            },
+            "age": int(age),
+            "revenu_mensuel": float(revenu),
+            "annees_dans_l_entreprise": int(anciennete),
+            "frequence_deplacement": frequence,
         }
 
-        result = api_post("/predictions/request", payload)
+        params = {
+            "model_name": model_name,
+            "source": "dashboard",
+        }
+
+        result = api_post(
+            "/predictions/request",
+            payload=payload,
+            params=params,
+        )
 
         request_id = result.get("request_id")
         status = result.get("status", "UNKNOWN")

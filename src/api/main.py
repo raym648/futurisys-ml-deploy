@@ -2,7 +2,6 @@
 
 from fastapi import FastAPI
 
-from src.api.routes.dataset import router as dataset_router
 from src.api.routes.docs_api import router as docs_router  # 👈 NOUVEAU
 from src.api.routes.metadata import router as metadata_router
 from src.api.routes.metrics import router as metrics_router
@@ -19,7 +18,6 @@ app = FastAPI(
 # Routes datasets
 # ============================================================
 
-app.include_router(dataset_router)
 
 # ============================================================
 # Routes ML prediction
