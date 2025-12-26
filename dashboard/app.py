@@ -8,6 +8,9 @@ import pandas as pd
 import requests
 import streamlit as st
 
+# from textwrap import dedent
+
+
 # import time
 
 
@@ -37,19 +40,6 @@ st.set_page_config(
 
 st.title("📊 Futurisys ML – Monitoring & Inference Dashboard")
 
-# ============================================================
-# DOCUMENTATION FILES
-# ============================================================
-DOCS_PATH = "docs"
-
-DOCS_PAGES = {
-    "📘 API": "api.md",
-    "🏗️ Architecture": "architecture.md",
-    "🧠 Model": "model.md",
-    "📈 Monitoring": "monitoring.md",
-    "🧪 Tests": "tests.md",
-    "🔁 Update Policy": "update_policy.md",
-}
 
 # ============================================================
 # SIDEBAR NAVIGATION
@@ -173,8 +163,8 @@ elif page == "🧠 Model Comparison":
         alt.Chart(df_sel)
         .mark_bar()
         .encode(
-            x=alt.X("model:N", title="Model"),
-            y=alt.Y(f"{metric}:Q", title=metric),
+            x=alt.X("model: N", title="Model"),
+            y=alt.Y(f"{metric}: Q", title=metric),
             color="model:N",
             tooltip=list(df_sel.columns),
         )
@@ -262,10 +252,12 @@ elif page == "🤖 Submit Prediction Request":
 
         request_id = result.get("request_id")
         status = result.get("status", "UNKNOWN")
-
+        # fmt: off
         st.success("✅ Prediction request submitted")
-        st.write(f"**Request ID:** `{request_id}`")
-        st.write(f"**Status:** `{status}`")
+        # fmt: on
+        st.write(f"**Request ID: ** `{request_id}`")
+        st.write(f"**Status: ** `{status}`")
+
 
 # ============================================================
 # DOCUMENTATION
@@ -273,16 +265,41 @@ elif page == "🤖 Submit Prediction Request":
 elif page == "📚 Documentation API":
     st.header("📚 Documentation API")
 
-    doc_choice = st.selectbox(
-        "Select documentation",
-        list(DOCS_PAGES.keys()),
+    st.markdown(
+        f"""
+    ### 📖 OpenAPI – Documentation interactive
+-[Swagger UI]({API_BASE_URL}/docs)
+-[ReDoc]({API_BASE_URL}/redoc)
+    """
     )
 
-    doc_file = DOCS_PAGES[doc_choice]
-    doc_path = os.path.join(DOCS_PATH, doc_file)
+    st.divider()
 
-    if not os.path.exists(doc_path):
-        st.error(f"❌ Documentation file not found: `{doc_path}`")
-    else:
-        with open(doc_path, "r", encoding="utf-8") as f:
-            st.markdown(f.read(), unsafe_allow_html=True)
+    st.subheader("📄 Documentation fonctionnelle & technique")
+
+    DOCS_API_PAGES = {
+        "📘 API": "api",
+        "🏗️ Architecture": "architecture",
+        "🧠 Model": "model",
+        "📈 Monitoring": "monitoring",
+        "🧪 Tests": "tests",
+        "🔁 Update Policy": "update_policy",
+    }
+
+    doc_choice = st.selectbox(
+        "Select documentation",
+        list(DOCS_API_PAGES.keys()),
+    )
+
+    doc_key = DOCS_API_PAGES[doc_choice]
+
+    try:
+        # 🔗 Utilisation de l'abstraction API EXISTANTE
+        doc_content = api_get(f"/docs/{doc_key}")
+
+        # Le endpoint FastAPI renverra du Markdown brut
+        st.markdown(doc_content["content"], unsafe_allow_html=True)
+
+    except Exception as e:
+        st.error("❌ Unable to load documentation from API")
+        st.code(str(e))
