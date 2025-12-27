@@ -1,21 +1,49 @@
 # futurisys-ml-deploy/src/ml/inference.py
 
-import pandas as pd
+from typing import Any, Dict
 
-from src.ml.model_registry import get_model
+from src.ml.loader import MLModelLoader
+
+# ============================================================
+# Feature normalization (API → ML)
+# ============================================================
+
+FREQUENCE_MAPPING = {
+    "aucun": 0,
+    "occasionnel": 1,
+    "frequent": 2,
+}
 
 
-def run_inference(payload: dict) -> tuple[int, float]:
+def normalize_payload(payload: Dict[str, Any]) -> Dict[str, Any]:
     """
-    Inference synchrone.
-    Le modèle embarque son propre pipeline de features.
+    Normalise les entrées pour le modèle ML.
+    Accepte str ou Enum.value sans dépendre de la couche API.
     """
-    model = get_model()  # modèle par défaut
+    payload = payload.copy()
 
-    # On passe les features BRUTES
-    df = pd.DataFrame([payload])
+    freq = payload.get("frequence_deplacement")
 
-    proba = model.predict_proba(df)[0][1]
-    pred = int(proba >= 0.5)
+    if freq is not None:
+        payload["frequence_deplacement"] = FREQUENCE_MAPPING.get(str(freq), 0)
 
-    return pred, float(proba)
+    return payload
+
+
+# ============================================================
+# Public inference API
+# ============================================================
+
+
+def run_inference(
+    payload: Dict[str, Any],
+    model_name: str | None = None,
+) -> Dict[str, Any]:
+    """
+    Inference synchrone, registry-first.
+    """
+    normalized_payload = normalize_payload(payload)
+
+    loader = MLModelLoader(model_name=model_name)
+
+    return loader.predict(normalized_payload)
