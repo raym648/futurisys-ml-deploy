@@ -9,6 +9,7 @@ Routes de gestion des prédictions ML (DB-first).
 """
 
 from datetime import UTC, datetime
+from time import perf_counter
 from typing import List
 from uuid import UUID, uuid4
 
@@ -17,11 +18,11 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.api.schemas.input import PredictionInput
-from src.api.schemas.output import (  # fmt: off; fmt: on
-    PredictionRequestResponse,
+from src.api.schemas.output import (  # fmt: off; fmt: on;
     PredictionResultResponse,
 )
 from src.db.session import get_async_session
+from src.ml.inference import run_inference
 from src.models.enums import PredictionStatus
 from src.models.prediction_request import PredictionRequest
 from src.models.prediction_result import PredictionResult
@@ -38,23 +39,18 @@ router = APIRouter(
 # ============================================================
 @router.post(
     "/request",
-    response_model=PredictionRequestResponse,
+    response_model=PredictionResultResponse,
     status_code=status.HTTP_201_CREATED,
 )
 async def submit_prediction_request(
     payload: PredictionInput,
-    model_name: str = Query("default", description="Nom du modèle ML"),
-    source: str = Query("dashboard", description="Source de la requête"),
+    model_name: str = Query("default"),
     session: AsyncSession = Depends(get_async_session),
 ):
-    """
-    Enregistre une requête de prédiction en base (Neon).
-    Aucune inférence n'est effectuée ici.
-    """
-
     request_uuid = str(uuid4())
     now = datetime.now(UTC)
 
+    # 1️⃣ Create request
     prediction_request = PredictionRequest(
         request_id=request_uuid,
         model_name=model_name,
@@ -67,21 +63,35 @@ async def submit_prediction_request(
     )
 
     session.add(prediction_request)
+    await session.flush()  # 🔑 get DB id
 
-    try:
-        await session.commit()
-        await session.refresh(prediction_request)
+    # 2️⃣ Run inference
+    start = perf_counter()
+    prediction, probability = run_inference(payload.dict())
+    latency_ms = (perf_counter() - start) * 1000
 
-    except Exception as exc:
-        await session.rollback()
-        raise HTTPException(
-            status_code=500,
-            detail=f"Failed to create prediction request: {exc}",
-        )
+    # 3️⃣ Save result
+    prediction_result = PredictionResult(
+        request_id=prediction_request.id,  # FK INT (correct)
+        prediction=prediction,
+        probability=probability,
+        latency_ms=latency_ms,
+        created_at=now,
+    )
 
-    return PredictionRequestResponse(
+    session.add(prediction_result)
+
+    # 4️⃣ Update status
+    prediction_request.status = PredictionStatus.completed
+
+    # 5️⃣ Commit transaction
+    await session.commit()
+
+    return PredictionResultResponse(
         request_id=request_uuid,
-        status=PredictionStatus.pending,
+        status=PredictionStatus.completed.value,
+        prediction=prediction,
+        probability=probability,
         created_at=now,
     )
 
@@ -98,13 +108,9 @@ async def get_prediction_history(
     limit: int = Query(50, ge=1, le=500),
     session: AsyncSession = Depends(get_async_session),
 ):
-    """
-    Retourne l'historique des prédictions terminées.
-    Utilisé par la page 'Prediction History' du dashboard.
-    """
-
     stmt = (
         select(PredictionResult)
+        .join(PredictionRequest)
         .order_by(PredictionResult.created_at.desc())
         .limit(limit)
     )
