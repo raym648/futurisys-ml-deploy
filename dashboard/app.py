@@ -179,22 +179,29 @@ elif page == "🧠 Model Comparison":
 elif page == "🧾 Prediction History":
     st.header("🧾 Prediction History")
 
-    history = api_get("/predictions/history")
-    df = pd.DataFrame(history)
+    try:
+        history = api_get("/predictions/history")
+        df = pd.DataFrame(history)
 
-    if df.empty:
-        st.info("No prediction history available.")
-    else:
-        st.dataframe(df, use_container_width=True)
+        if df.empty:
+            st.info("No prediction history available.")
+        else:
+            st.dataframe(df, use_container_width=True)
+
+    except requests.HTTPError as e:
+        st.error("❌ Unable to load prediction history")
+        st.code(str(e))
+
 
 # ============================================================
 # SUBMIT PREDICTION REQUEST
 # ============================================================
 elif page == "🤖 Submit Prediction Request":
     st.header("🤖 Submit a Prediction Request")
+
     st.caption(
-        "All prediction requests are stored in the database first. "
-        "Inference is handled asynchronously by the backend."
+        "Prediction requests are handled by the backend API. "
+        "Inference and persistence depend on the current deployment mode."
     )
 
     models = api_get("/models/")
