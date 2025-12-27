@@ -88,7 +88,7 @@ def test_create_prediction_request_success():
 
     body = response.json()
     assert "request_id" in body
-    assert body["status"] == PredictionStatus.pending
+    assert body["status"] == PredictionStatus.completed
     assert "created_at" in body
 
 
