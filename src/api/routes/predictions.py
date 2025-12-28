@@ -16,6 +16,7 @@ from uuid import UUID, uuid4
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from src.api.schemas.input import PredictionInput
 from src.api.schemas.output import (  # fmt: off; fmt: on;
@@ -67,12 +68,20 @@ async def submit_prediction_request(
 
     # 2️⃣ Run inference
     start = perf_counter()
-    prediction, probability = run_inference(payload.dict())
+
+    result = run_inference(
+        payload.dict(),
+        model_name=model_name,
+    )
+
     latency_ms = (perf_counter() - start) * 1000
+
+    prediction = result["prediction"]
+    probability = result["probability"]
 
     # 3️⃣ Save result
     prediction_result = PredictionResult(
-        request_id=prediction_request.id,  # FK INT (correct)
+        request_id=prediction_request.id,
         prediction=prediction,
         probability=probability,
         latency_ms=latency_ms,
@@ -110,7 +119,7 @@ async def get_prediction_history(
 ):
     stmt = (
         select(PredictionResult)
-        .join(PredictionRequest)
+        .options(selectinload(PredictionResult.request))
         .order_by(PredictionResult.created_at.desc())
         .limit(limit)
     )
@@ -123,7 +132,7 @@ async def get_prediction_history(
     for r in results:
         history.append(
             PredictionResultResponse(
-                request_id=r.request.request_id,  # ✅ UUID métier
+                request_id=r.request.request_id,  # ✅ SAFE maintenant
                 status=PredictionStatus.completed.value,
                 prediction=r.prediction,
                 probability=r.probability,
