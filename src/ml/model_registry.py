@@ -78,7 +78,11 @@ def _load_models() -> dict:
     """
     Charge les modèles ML disponibles.
     En mode test, retourne des modèles mockés.
+    Le modèle 'baseline' est un alias fonctionnel du modèle par défaut.
     """
+    # ========================================================
+    # TEST / CI MODE
+    # ========================================================
     if ENV == "test":
 
         class MockModel:
@@ -88,14 +92,22 @@ def _load_models() -> dict:
             def predict_proba(self, X):
                 return [[0.05, 0.95]]
 
+        mock_model = MockModel()
+
         return {
-            "dummy": MockModel(),
-            "logistic": MockModel(),
-            "random_forest": MockModel(),
-            "random_forest_e04": MockModel(),
+            # Alias fonctionnel
+            "baseline": mock_model,
+            # Modèles exposés
+            "dummy": mock_model,
+            "logistic": mock_model,
+            "random_forest": mock_model,
+            "random_forest_e04": mock_model,
         }
 
-    return {
+    # ========================================================
+    # PROD MODE
+    # ========================================================
+    models = {
         "dummy": joblib.load(
             # fmt: off
             BASE_PATH / "models" / "e03_dummy_most_frequent.joblib"
@@ -117,6 +129,11 @@ def _load_models() -> dict:
             # fmt: on
         ),
     }
+
+    # Alias sémantique : baseline → modèle par défaut
+    models["baseline"] = models["random_forest_e04"]
+
+    return models
 
 
 # ============================================================
